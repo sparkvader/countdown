@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Markham Middle End of Year Countdown</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;700&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #000;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    h1 {
+      position: relative; z-index: 1;
+      font-size: 1.2rem;
+      font-weight: 300;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 60px;
+    }
+
+    #countdown {
+      position: relative; z-index: 1;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .unit {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 140px;
+    }
+
+    .number {
+      font-size: 6rem;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -2px;
+    }
+
+    .label {
+      font-size: 0.75rem;
+      font-weight: 300;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #555;
+      margin-top: 12px;
+    }
+
+    .separator {
+      font-size: 5rem;
+      font-weight: 300;
+      color: #333;
+      line-height: 1;
+      padding-top: 4px;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1);    opacity: 1; }
+      50%       { transform: scale(1.06); opacity: 0.85; }
+    }
+
+    #done {
+      display: none;
+      position: relative; z-index: 1;
+      font-size: 4rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-align: center;
+      color: #00e676;
+      text-shadow: 0 0 30px rgba(0, 230, 118, 0.6);
+      animation: pulse 2s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="bg"></canvas>
+
+  <h1>Markham Middle End of Year Countdown</h1>
+
+  <div id="countdown">
+    <div class="unit"><span class="number" id="days">00</span><span class="label">Days</span></div>
+    <span class="separator">:</span>
+    <div class="unit"><span class="number" id="hours">00</span><span class="label">Hours</span></div>
+    <span class="separator">:</span>
+    <div class="unit"><span class="number" id="minutes">00</span><span class="label">Minutes</span></div>
+    <span class="separator">:</span>
+    <div class="unit"><span class="number" id="seconds">00</span><span class="label">Seconds</span></div>
+  </div>
+
+  <div id="done">School's Out!</div>
+
+  <script>
+    // ── Countdown ──────────────────────────────────────────────────────────────
+    const target = new Date('May 29, 2026 00:00:00');
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    function daysRemaining() {
+      return Math.max(0, Math.floor((target - new Date()) / 86400000));
+    }
+
+    let trackedDays  = daysRemaining();
+    let celebrating  = false;
+
+    function tick() {
+      if (celebrating) return;
+      const diff = target - new Date();
+      if (diff <= 0) {
+        triggerCelebration();
+        return;
+      }
+      document.getElementById('days').textContent    = pad(Math.floor(diff / 86400000));
+      document.getElementById('hours').textContent   = pad(Math.floor(diff / 3600000) % 24);
+      document.getElementById('minutes').textContent = pad(Math.floor(diff / 60000) % 60);
+      document.getElementById('seconds').textContent = pad(Math.floor(diff / 1000) % 60);
+
+      const current = daysRemaining();
+      if (current < trackedDays) {
+        trackedDays = current;
+        octos = octos.slice(0, current);
+      }
+    }
+    tick();
+    setInterval(tick, 1000);
+
+    // ── Canvas setup ───────────────────────────────────────────────────────────
+    const canvas = document.getElementById('bg');
+    const ctx    = canvas.getContext('2d');
+
+    function resize() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resize();
+
+    // ── Shared helpers ─────────────────────────────────────────────────────────
+    function rand(seed) {
+      const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
+      return x - Math.floor(x);
+    }
+
+    function lerp(a, b, t) { return a + (b - a) * t; }
+
+    let time = 0;
+
+    // ── Octopus ────────────────────────────────────────────────────────────────
+    const PALETTE = [
+      { color: '#FF6B9D', outline: '#9D1F4A' },
+      { color: '#B06EF5', outline: '#5B1FA8' },
+      { color: '#1ECFB5', outline: '#0C7A6A' },
+      { color: '#FFD43B', outline: '#8C6A00' },
+      { color: '#FF7043', outline: '#8B1A00' },
+      { color: '#42A5F5', outline: '#0D47A1' },
+      { color: '#66BB6A', outline: '#1B5E20' },
+      { color: '#FFA726', outline: '#7B3800' },
+      { color: '#EC407A', outline: '#880E4F' },
+      { color: '#26C6DA', outline: '#006064' },
+      { color: '#D4E157', outline: '#6D7A00' },
+      { color: '#AB47BC', outline: '#4A148C' },
+      { color: '#EF5350', outline: '#B71C1C' },
+      { color: '#29B6F6', outline: '#01579B' },
+      { color: '#FFCA28', outline: '#7B5500' },
+      { color: '#26A69A', outline: '#004D40' },
+      { color: '#7E57C2', outline: '#311B92' },
+      { color: '#FF8A65', outline: '#8B2500' },
+      { color: '#9CCC65', outline: '#33691E' },
+      { color: '#5C6BC0', outline: '#1A237E' },
+    ];
+
+    function makeOcto(i, seedOffset = 0) {
+      const r = n => rand((i + seedOffset) * 17 + n);
+      const angle = r(0) * Math.PI * 2;
+      const speed = 0.55 + r(1) * 1.05;
+      const { color, outline } = PALETTE[i % PALETTE.length];
+      return {
+        type: 'octo',
+        x: canvas.width  * (0.05 + r(2) * 0.9),
+        y: canvas.height * (0.05 + r(3) * 0.9),
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        color, outline,
+        size:  24 + r(4) * 14,
+        phase: r(5) * Math.PI * 2,
+        alpha: 1,
+      };
+    }
+
+    function drawOcto(o) {
+      const { x, y, color, outline, size, phase, vx, vy, alpha = 1 } = o;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(x, y);
+      ctx.rotate(Math.atan2(vy, vx));
+      ctx.rotate(Math.sin(time * 1.8 + phase) * 0.12);
+
+      const s = size;
+      const NUM_TENT = 8, TENT_LEN = s * 1.9, WAVE_AMP = s * 0.55;
+      const SPREAD_START = Math.PI * 0.61, SPREAD_END = Math.PI * 1.39;
+
+      for (let i = 0; i < NUM_TENT; i++) {
+        const t    = i / (NUM_TENT - 1);
+        const base = SPREAD_START + t * (SPREAD_END - SPREAD_START);
+        const wave = Math.sin(time * 2.8 + i * 0.75 + phase) * WAVE_AMP;
+        const px = -Math.sin(base), py = Math.cos(base);
+        const sx = Math.cos(base) * s * 0.72, sy = Math.sin(base) * s * 0.72;
+        const cx = Math.cos(base) * TENT_LEN * 0.45 + px * wave;
+        const cy = Math.sin(base) * TENT_LEN * 0.45 + py * wave;
+        const ex = Math.cos(base) * TENT_LEN + px * wave * 2.0;
+        const ey = Math.sin(base) * TENT_LEN + py * wave * 2.0;
+
+        ctx.beginPath(); ctx.moveTo(sx, sy); ctx.quadraticCurveTo(cx, cy, ex, ey);
+        ctx.strokeStyle = outline; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(sx, sy); ctx.quadraticCurveTo(cx, cy, ex, ey);
+        ctx.strokeStyle = color;   ctx.lineWidth = 4.5; ctx.stroke();
+      }
+
+      ctx.beginPath(); ctx.arc(0, 0, s, 0, Math.PI * 2);
+      ctx.fillStyle = outline; ctx.fill();
+      ctx.beginPath(); ctx.arc(0, 0, s - 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = color; ctx.fill();
+
+      const grad = ctx.createRadialGradient(-s * 0.3, -s * 0.35, 0, 0, 0, s);
+      grad.addColorStop(0, 'rgba(255,255,255,0.22)');
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.beginPath(); ctx.arc(0, 0, s - 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = grad; ctx.fill();
+
+      const eyeR = s * 0.27, eyeOX = s * 0.28, eyeOY = -s * 0.15;
+      for (const ex of [-eyeOX, eyeOX]) {
+        ctx.beginPath(); ctx.arc(ex, eyeOY, eyeR, 0, Math.PI * 2);
+        ctx.fillStyle = 'white'; ctx.fill();
+        ctx.strokeStyle = outline; ctx.lineWidth = 1.8; ctx.stroke();
+        ctx.beginPath(); ctx.arc(ex + eyeR * 0.18, eyeOY + eyeR * 0.12, eyeR * 0.52, 0, Math.PI * 2);
+        ctx.fillStyle = '#111'; ctx.fill();
+        ctx.beginPath(); ctx.arc(ex + eyeR * 0.38, eyeOY - eyeR * 0.25, eyeR * 0.2, 0, Math.PI * 2);
+        ctx.fillStyle = 'white'; ctx.fill();
+        ctx.globalAlpha = alpha * 0.28;
+        ctx.beginPath(); ctx.arc(ex, eyeOY + eyeR * 1.35, eyeR * 0.65, 0, Math.PI * 2);
+        ctx.fillStyle = '#FF8888'; ctx.fill();
+        ctx.globalAlpha = alpha;
+      }
+
+      ctx.beginPath(); ctx.arc(0, s * 0.22, s * 0.28, 0.25, Math.PI - 0.25);
+      ctx.strokeStyle = outline; ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.stroke();
+
+      ctx.restore();
+    }
+
+    // ── Starfish ───────────────────────────────────────────────────────────────
+    const STAR_COLORS = [
+      { color: '#FF9F43', outline: '#C0600A' },
+      { color: '#FECA57', outline: '#B8860B' },
+    ];
+
+    function makeStarfish(i) {
+      const r = n => rand((i + 50) * 17 + n);
+      return {
+        type: 'star',
+        x: canvas.width  * (0.1 + r(0) * 0.8),
+        y: canvas.height * (0.1 + r(1) * 0.8),
+        vx: (r(2) - 0.5) * 1.2,
+        vy: (r(3) - 0.5) * 1.2,
+        color:   STAR_COLORS[i % 2].color,
+        outline: STAR_COLORS[i % 2].outline,
+        size:    28 + r(4) * 10,
+        phase:   r(5) * Math.PI * 2,
+        alpha: 0,
+      };
+    }
+
+    function drawStarfish(o) {
+      const { x, y, color, outline, size, phase, alpha = 1 } = o;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(x, y);
+      ctx.rotate(time * 0.4 + phase);
+
+      const s = size;
+
+      // Star body outline
+      ctx.beginPath();
+      for (let i = 0; i < 10; i++) {
+        const r = i % 2 === 0 ? s : s * 0.42;
+        const a = (i * Math.PI) / 5 - Math.PI / 2;
+        i === 0 ? ctx.moveTo(r * Math.cos(a), r * Math.sin(a))
+                : ctx.lineTo(r * Math.cos(a), r * Math.sin(a));
+      }
+      ctx.closePath();
+      ctx.fillStyle = outline; ctx.fill();
+
+      // Star body fill
+      ctx.beginPath();
+      for (let i = 0; i < 10; i++) {
+        const r = i % 2 === 0 ? s - 2.5 : (s * 0.42) - 1;
+        const a = (i * Math.PI) / 5 - Math.PI / 2;
+        i === 0 ? ctx.moveTo(r * Math.cos(a), r * Math.sin(a))
+                : ctx.lineTo(r * Math.cos(a), r * Math.sin(a));
+      }
+      ctx.closePath();
+      ctx.fillStyle = color; ctx.fill();
+
+      // Center circle
+      ctx.beginPath(); ctx.arc(0, 0, s * 0.36, 0, Math.PI * 2);
+      ctx.fillStyle = outline; ctx.fill();
+      ctx.beginPath(); ctx.arc(0, 0, s * 0.31, 0, Math.PI * 2);
+      ctx.fillStyle = color; ctx.fill();
+
+      // Highlight
+      const grad = ctx.createRadialGradient(-s * 0.1, -s * 0.1, 0, 0, 0, s * 0.35);
+      grad.addColorStop(0, 'rgba(255,255,255,0.3)');
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.beginPath(); ctx.arc(0, 0, s * 0.31, 0, Math.PI * 2);
+      ctx.fillStyle = grad; ctx.fill();
+
+      // Eyes
+      const eyeR = s * 0.09;
+      for (const ex of [-s * 0.1, s * 0.1]) {
+        ctx.beginPath(); ctx.arc(ex, -s * 0.04, eyeR, 0, Math.PI * 2);
+        ctx.fillStyle = 'white'; ctx.fill();
+        ctx.strokeStyle = outline; ctx.lineWidth = 1; ctx.stroke();
+        ctx.beginPath(); ctx.arc(ex + eyeR * 0.2, -s * 0.04 + eyeR * 0.15, eyeR * 0.55, 0, Math.PI * 2);
+        ctx.fillStyle = '#111'; ctx.fill();
+        ctx.beginPath(); ctx.arc(ex + eyeR * 0.45, -s * 0.04 - eyeR * 0.3, eyeR * 0.2, 0, Math.PI * 2);
+        ctx.fillStyle = 'white'; ctx.fill();
+      }
+
+      // Smile
+      ctx.beginPath(); ctx.arc(0, s * 0.1, s * 0.09, 0.3, Math.PI - 0.3);
+      ctx.strokeStyle = outline; ctx.lineWidth = 1.5; ctx.lineCap = 'round'; ctx.stroke();
+
+      ctx.restore();
+    }
+
+    // ── Crab ───────────────────────────────────────────────────────────────────
+    const CRAB_COLORS = [
+      { color: '#FF4757', outline: '#8B0000' },
+      { color: '#FF6B81', outline: '#9B1B30' },
+    ];
+
+    function makeCrab(i) {
+      const r = n => rand((i + 100) * 17 + n);
+      const speed = 1.4 + r(0) * 1.0;
+      return {
+        type: 'crab',
+        x: canvas.width  * (0.1 + r(1) * 0.8),
+        y: canvas.height * (0.15 + r(2) * 0.7),
+        vx: (r(3) > 0.5 ? 1 : -1) * speed,
+        vy: (r(4) - 0.5) * 0.4,
+        color:   CRAB_COLORS[i % 2].color,
+        outline: CRAB_COLORS[i % 2].outline,
+        size:    22 + r(5) * 10,
+        phase:   r(6) * Math.PI * 2,
+        alpha: 0,
+      };
+    }
+
+    function drawCrab(o) {
+      const { x, y, color, outline, size, phase, vx, alpha = 1 } = o;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(x, y);
+      if (vx < 0) ctx.scale(-1, 1);
+      ctx.translate(0, Math.sin(time * 4 + phase) * 2.5);
+
+      const s = size;
+
+      // ── Legs (3 per visible side, drawn behind body) ──
+      for (let i = 0; i < 3; i++) {
+        const lx  = -s * 0.55 + i * s * 0.45;
+        const ang = 0.5 + i * 0.12 + Math.sin(time * 5 + i * 0.8 + phase) * 0.25;
+        ctx.strokeStyle = outline; ctx.lineWidth = 4; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(lx, s * 0.1);
+        ctx.lineTo(lx + Math.cos(ang) * s * 0.85, s * 0.6); ctx.stroke();
+        ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.moveTo(lx, s * 0.1);
+        ctx.lineTo(lx + Math.cos(ang) * s * 0.85, s * 0.6); ctx.stroke();
+      }
+
+      // ── Left claw ──
+      ctx.save();
+      ctx.translate(-s * 1.25, -s * 0.15);
+      ctx.rotate(-0.3 + Math.sin(time * 1.5 + phase) * 0.15);
+      // Arm
+      ctx.fillStyle = outline;
+      ctx.beginPath(); ctx.ellipse(s * 0.3, 0, s * 0.38, s * 0.2, 0.1, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.ellipse(s * 0.3, 0, s * 0.34, s * 0.16, 0.1, 0, Math.PI * 2); ctx.fill();
+      // Pincer top
+      ctx.fillStyle = outline;
+      ctx.beginPath(); ctx.ellipse(0, -s * 0.22, s * 0.22, s * 0.14, -0.4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.ellipse(0, -s * 0.22, s * 0.18, s * 0.11, -0.4, 0, Math.PI * 2); ctx.fill();
+      // Pincer bottom
+      ctx.fillStyle = outline;
+      ctx.beginPath(); ctx.ellipse(0, s * 0.12, s * 0.22, s * 0.14, 0.4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.ellipse(0, s * 0.12, s * 0.18, s * 0.11, 0.4, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+
+      // ── Right claw ──
+      ctx.save();
+      ctx.translate(s * 1.25, -s * 0.15);
+      ctx.rotate(0.3 + Math.sin(time * 1.5 + phase + 1) * 0.15);
+      ctx.fillStyle = outline;
+      ctx.beginPath(); ctx.ellipse(-s * 0.3, 0, s * 0.38, s * 0.2, -0.1, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.ellipse(-s * 0.3, 0, s * 0.34, s * 0.16, -0.1, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = outline;
+      ctx.beginPath(); ctx.ellipse(0, -s * 0.22, s * 0.22, s * 0.14, 0.4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.ellipse(0, -s * 0.22, s * 0.18, s * 0.11, 0.4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = outline;
+      ctx.beginPath(); ctx.ellipse(0, s * 0.12, s * 0.22, s * 0.14, -0.4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.ellipse(0, s * 0.12, s * 0.18, s * 0.11, -0.4, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+
+      // ── Body ──
+      ctx.fillStyle = outline;
+      ctx.beginPath(); ctx.ellipse(0, 0, s, s * 0.65, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.ellipse(0, 0, s - 2, s * 0.62, 0, 0, Math.PI * 2); ctx.fill();
+
+      // Shell line detail
+      ctx.strokeStyle = outline; ctx.lineWidth = 1.2;
+      for (let i = -2; i <= 2; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * s * 0.2, -s * 0.6);
+        ctx.quadraticCurveTo(i * s * 0.22, 0, i * s * 0.2, s * 0.6);
+        ctx.stroke();
+      }
+
+      // Body highlight
+      const grad = ctx.createRadialGradient(-s * 0.25, -s * 0.25, 0, 0, 0, s);
+      grad.addColorStop(0, 'rgba(255,255,255,0.2)');
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.beginPath(); ctx.ellipse(0, 0, s - 2, s * 0.62, 0, 0, Math.PI * 2);
+      ctx.fillStyle = grad; ctx.fill();
+
+      // ── Eye stalks & eyes ──
+      for (const ex of [-s * 0.32, s * 0.32]) {
+        ctx.strokeStyle = outline; ctx.lineWidth = 3; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(ex, -s * 0.58); ctx.lineTo(ex, -s * 0.92); ctx.stroke();
+        ctx.fillStyle = 'white';
+        ctx.beginPath(); ctx.arc(ex, -s * 0.98, s * 0.19, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = outline; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.fillStyle = '#111';
+        ctx.beginPath(); ctx.arc(ex + s * 0.05, -s * 0.96, s * 0.09, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'white';
+        ctx.beginPath(); ctx.arc(ex + s * 0.1, -s * 1.02, s * 0.035, 0, Math.PI * 2); ctx.fill();
+      }
+
+      // ── Smile ──
+      ctx.beginPath(); ctx.arc(0, s * 0.12, s * 0.32, 0.35, Math.PI - 0.35);
+      ctx.strokeStyle = outline; ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.stroke();
+
+      ctx.restore();
+    }
+
+    // ── Confetti ───────────────────────────────────────────────────────────────
+    const CONFETTI_COLORS = [
+      '#FF6B6B','#FFD93D','#6BCB77','#4D96FF',
+      '#FF922B','#CC5DE8','#F06595','#20C997',
+      '#74C0FC','#FFA94D','#A9E34B','#FF87B2',
+    ];
+
+    function makeConfetti(scatter = false) {
+      return {
+        x:        Math.random() * canvas.width,
+        y:        scatter ? Math.random() * canvas.height : -15,
+        vx:       (Math.random() - 0.5) * 2.2,
+        vy:       2.2 + Math.random() * 3.0,
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.14,
+        color:    CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+        w:        6 + Math.random() * 9,
+        h:        3 + Math.random() * 5,
+        shape:    Math.random() > 0.5 ? 'rect' : 'ellipse',
+      };
+    }
+
+    let confetti     = [];
+    let partyAnimals = [];
+
+    function triggerCelebration() {
+      celebrating = true;
+      octos = [];
+      document.getElementById('countdown').style.display = 'none';
+      document.getElementById('done').style.display = 'block';
+
+      // Confetti — half scattered, half from top
+      for (let i = 0; i < 150; i++) confetti.push(makeConfetti(i < 75));
+
+      // Party animals — 5 octos + 2 starfish + 2 crabs
+      for (let i = 0; i < 5; i++) partyAnimals.push(makeOcto(i, 200));
+      for (let i = 0; i < 2; i++) partyAnimals.push(makeStarfish(i));
+      for (let i = 0; i < 2; i++) partyAnimals.push(makeCrab(i));
+    }
+
+    // ── Countdown octopuses ────────────────────────────────────────────────────
+    let octos = Array.from({ length: trackedDays }, (_, i) => makeOcto(i));
+
+    window.addEventListener('resize', () => {
+      resize();
+      if (!celebrating) {
+        octos = Array.from({ length: trackedDays }, (_, i) => makeOcto(i));
+      } else {
+        partyAnimals = [];
+        for (let i = 0; i < 5; i++) partyAnimals.push(makeOcto(i, 200));
+        for (let i = 0; i < 2; i++) partyAnimals.push(makeStarfish(i));
+        for (let i = 0; i < 2; i++) partyAnimals.push(makeCrab(i));
+      }
+    });
+
+    // ── Update ─────────────────────────────────────────────────────────────────
+    function moveAnimal(o) {
+      o.x += o.vx;
+      o.y += o.vy;
+      const p = (o.size || 30) * 2.5;
+      if (o.x >  canvas.width  + p) o.x = -p;
+      if (o.x < -p)                 o.x =  canvas.width  + p;
+      if (o.y >  canvas.height + p) o.y = -p;
+      if (o.y < -p)                 o.y =  canvas.height + p;
+    }
+
+    function update() {
+      time += 0.016;
+
+      if (!celebrating) {
+        for (const o of octos) moveAnimal(o);
+        return;
+      }
+
+      // Fade in party animals
+      for (const o of partyAnimals) {
+        o.alpha = Math.min(1, (o.alpha || 0) + 0.012);
+        moveAnimal(o);
+      }
+
+      // Update & respawn confetti
+      for (const c of confetti) {
+        c.x        += c.vx;
+        c.y        += c.vy;
+        c.vx       += (Math.random() - 0.5) * 0.08;
+        c.rotation += c.rotSpeed;
+        if (c.y > canvas.height + 20) Object.assign(c, makeConfetti(false));
+      }
+    }
+
+    // ── Draw ───────────────────────────────────────────────────────────────────
+    function drawConfettiParticle(c) {
+      ctx.save();
+      ctx.translate(c.x, c.y);
+      ctx.rotate(c.rotation);
+      ctx.fillStyle = c.color;
+      if (c.shape === 'rect') {
+        ctx.fillRect(-c.w / 2, -c.h / 2, c.w, c.h);
+      } else {
+        ctx.beginPath();
+        ctx.ellipse(0, 0, c.w / 2, c.h / 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawAnimal(o) {
+      if (o.type === 'octo') drawOcto(o);
+      else if (o.type === 'star') drawStarfish(o);
+      else if (o.type === 'crab') drawCrab(o);
+    }
+
+    function loop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      update();
+
+      if (!celebrating) {
+        for (const o of octos) drawOcto(o);
+      } else {
+        for (const o of partyAnimals) drawAnimal(o);
+        for (const c of confetti)     drawConfettiParticle(c);
+      }
+
+      requestAnimationFrame(loop);
+    }
+
+    loop();
+  </script>
+
+</body>
+</html>
